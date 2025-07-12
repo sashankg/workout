@@ -4,7 +4,7 @@ import { sqliteTable, int, text, real } from "drizzle-orm/sqlite-core";
 export const workoutSchedule = sqliteTable("workoutSchedule", {
   id: int().primaryKey({ autoIncrement: true }),
   name: text(),
-});
+}, []);
 
 export const workout = sqliteTable("workout", {
   id: int().primaryKey({ autoIncrement: true }),

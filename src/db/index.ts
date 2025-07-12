@@ -8,7 +8,7 @@ import {
   ExtractTablesWithRelations,
   sql,
 } from "drizzle-orm";
-import * as Schema from "./schema/schema";
+import * as Schema from "./schema";
 
 type Worker1<T = "exec" | string> = (command: T, msg: any) => Promise<any>;
 
