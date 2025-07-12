@@ -1,0 +1,4 @@
+dialog::backdrop {
+    background-color: gray;
+    opacity: 0.5;
+}
