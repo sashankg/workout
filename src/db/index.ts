@@ -1,7 +1,7 @@
 import { drizzle, SqliteRemoteDatabase } from "drizzle-orm/sqlite-proxy";
 import { sqlite3Worker1Promiser } from "@sqlite.org/sqlite-wasm";
 import { MigrationMeta } from "drizzle-orm/migrator";
-import arrayBuffer2Hex from "./util/arrayBuffer2Hex";
+import arrayBuffer2Hex from "@/util/arrayBuffer2Hex";
 import {
   BuildQueryResult,
   DBQueryConfig,
@@ -17,12 +17,12 @@ declare module "@sqlite.org/sqlite-wasm" {
 }
 
 async function getMigrations(): Promise<MigrationMeta[]> {
-  const journal = (await import("./drizzle/meta/_journal.json")).default;
+  const journal = (await import("./migrations/meta/_journal.json")).default;
   const encoder = new TextEncoder();
   return Promise.all(
     journal.entries.map(async (journalEntry) => {
       const query: string = (
-        await import(`./drizzle/${journalEntry.tag}.sql?raw`)
+        await import(`./migrations/${journalEntry.tag}.sql?raw`)
       ).default;
       const result = query.split("--> statement-breakpoint");
       return {
@@ -84,7 +84,7 @@ export type DatabaseQuery<
   TConfig extends DBQueryConfig<"many", boolean, RelationsSchema>,
 > = BuildQueryResult<RelationsSchema, RelationsSchema[TTable], TConfig>;
 
-export default new Promise<Database>(async (resolve) => {
+export default (async () => {
   console.log("Loading and initializing SQLite3 module...");
 
   const promiser = await new Promise<Worker1>((resolve) => {
@@ -111,14 +111,17 @@ export default new Promise<Database>(async (resolve) => {
     dbId,
   );
   const db = drizzle(
-    async (sql, params) => {
+    async (sql, params, method) => {
       const { result } = await promiser("exec", {
         dbId,
         sql,
         bind: params,
         returnValue: "resultRows",
       });
-      console.log("Executed SQL:", result);
+      console.log("Executed SQL:", result.sql, result.bind);
+      if (method === "get") {
+        return { rows: result.resultRows[0] };
+      }
       return { rows: result.resultRows };
     },
     {
@@ -130,5 +133,5 @@ export default new Promise<Database>(async (resolve) => {
 
   await migrate(db);
 
-  resolve(db);
+  return (db);
 });
