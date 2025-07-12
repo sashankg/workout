@@ -1,22 +1,40 @@
-import { Link, Outlet } from "react-router-dom";
-import getDb from "../getDb";
-import useLoaderData from "../util/useLoaderData";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, Outlet } from "react-router";
+import { useWorkouts } from "../queries/workouts";
 
-export async function workoutsLoader() {
-  const db = await getDb()
-  const workouts = await db.getAll('workouts')
-  return workouts
-}
 export default function Workouts() {
-  const workouts = useLoaderData<typeof workoutsLoader>()
-  return <div>
-    <h1>Workout</h1>
-    <Link to="new"><button>New</button></Link>
-    <ul>
-      {workouts.map(workout => (
-        <li key={workout.id}>{workout.name}</li>
-      ))}
-    </ul>
-    <Outlet />
-  </div>;
+  const { data: workouts } = useWorkouts();
+  const queryClient = useQueryClient();
+  return (
+    <div>
+      <h1>Workout</h1>
+      <Link to="new">
+        <button>New</button>
+      </Link>
+      <ul>
+        {workouts.map((workout) => (
+          <li key={workout.id}>
+            {workout.name}
+            <Link
+              to={`edit/${workout.id}`}
+              onClick={() => {
+                queryClient.setQueryData(
+                  ["workouts", "id", `${workout.id}`],
+                  workout,
+                );
+              }}
+            >
+              ✏️
+            </Link>
+            <ul>
+              {workout.exercises.map((exercise) => (
+                <li key={exercise.id}>{exercise.name}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+      <Outlet />
+    </div>
+  );
 }
